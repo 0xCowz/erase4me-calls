@@ -85,7 +85,7 @@ final class Catalog: ObservableObject {
         }.sorted { $0.numbers > $1.numbers }
 
         generated = file.generated
-        prefixes = file.prefixes
+        prefixes = Array(Set(sortedTranches.map { $0.prefix4 })).sorted()   // seulement les plages qui ont des numéros attribués
         tranches = sortedTranches
         opByCode = file.operators
         totalNumbers = sortedTranches.reduce(0) { $0 + $1.size }

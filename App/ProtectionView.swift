@@ -9,7 +9,11 @@ struct ProtectionView: View {
     @State private var statusText = "Vérification…"
     @State private var message = ""
 
-    private var extensionID: String { (Bundle.main.bundleIdentifier ?? "com.erase4me.calls") + ".blocker" }
+    /// Deux extensions : « .blocker » et « .blocker2 » (même identifiant de base que l'app, même si l'outil de sideload le change).
+    private var extensionIDs: [String] {
+        let base = Bundle.main.bundleIdentifier ?? "com.erase4me.calls"
+        return [base + ".blocker", base + ".blocker2"]
+    }
 
     var body: some View {
         ScrollView {
@@ -23,7 +27,7 @@ struct ProtectionView: View {
                 ScreenHeader(
                     eyebrow: "Anti-démarchage",
                     title: enabled == true ? "Les appels de démarchage sont bloqués." : "La protection n'est pas encore active.",
-                    subtitle: "Les numéros attribués par l'ARCEP aux appels de prospection commerciale sont refusés par ton iPhone avant même de sonner."
+                    subtitle: "Les numéros que l'ARCEP réserve à la prospection commerciale (01 62, 02 70, 03 77, 04 24, 05 68, 09 48) sont refusés par ton iPhone avant même de sonner."
                 )
 
                 statusPanel
@@ -53,7 +57,7 @@ struct ProtectionView: View {
                     Text(statusText).font(Typo.title(20)).foregroundColor(Palette.text)
                 }
                 if enabled != true {
-                    Text("Réglages > Téléphone > Blocage d'appels et identification > active « Anti-démarchage ».")
+                    Text("Réglages > Téléphone > Blocage d'appels et identification > active « Anti-démarchage 1 » et « Anti-démarchage 2 » : la liste est répartie sur deux extensions.")
                         .font(Typo.body(14)).foregroundColor(Palette.text2)
                 }
                 Button("Ouvrir les réglages de blocage") {
@@ -130,23 +134,43 @@ struct ProtectionView: View {
     }
 
     private func refresh() {
-        CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: extensionID) { s, error in
-            DispatchQueue.main.async {
-                switch s {
-                case .enabled: enabled = true; statusText = "Protection active"
-                case .disabled: enabled = false; statusText = "Protection désactivée"
-                default: enabled = false; statusText = "État inconnu" + (error.map { " (\($0.localizedDescription))" } ?? "")
-                }
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var activeCount = 0
+        var failed = false
+        for id in extensionIDs {
+            group.enter()
+            CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: id) { s, error in
+                lock.lock()
+                if s == .enabled { activeCount += 1 }
+                if error != nil && s != .enabled && s != .disabled { failed = true }
+                lock.unlock()
+                group.leave()
             }
+        }
+        group.notify(queue: .main) {
+            let total = extensionIDs.count
+            enabled = activeCount == total
+            if activeCount == total { statusText = "Protection active" }
+            else if activeCount > 0 { statusText = "Protection partielle : \(activeCount) extension sur \(total)" }
+            else { statusText = failed ? "État inconnu" : "Protection désactivée" }
         }
     }
 
     private func reload() {
-        CXCallDirectoryManager.sharedInstance.reloadExtension(withIdentifier: extensionID) { error in
-            DispatchQueue.main.async {
-                message = error.map { "Échec du rechargement : \($0.localizedDescription)" } ?? "Liste rechargée."
-                refresh()
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var errors: [String] = []
+        for id in extensionIDs {
+            group.enter()
+            CXCallDirectoryManager.sharedInstance.reloadExtension(withIdentifier: id) { error in
+                if let e = error { lock.lock(); errors.append(e.localizedDescription); lock.unlock() }
+                group.leave()
             }
+        }
+        group.notify(queue: .main) {
+            message = errors.isEmpty ? "Listes rechargées." : "Échec du rechargement : " + errors.joined(separator: " / ")
+            refresh()
         }
     }
 }

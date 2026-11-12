@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.1"
-    CURRENT_PROJECT_VERSION: "2"
+    MARKETING_VERSION: "1.2"
+    CURRENT_PROJECT_VERSION: "3"
 targets:
   Erase4meCalls:
     type: application
@@ -27,21 +27,44 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
-      - target: Blocker
+      - target: Blocker1
         embed: true
-  Blocker:
+      - target: Blocker2
+        embed: true
+
+  # Deux extensions CallKit : la liste complète (2,3 millions de numéros) dépasse ce qu'une seule gère de façon fiable.
+  Blocker1:
     type: app-extension
     platform: iOS
     sources:
-      - path: BlockerExtension
+      - path: BlockerShared
+      - path: Blocker1
     info:
-      path: BlockerExtension/Info.plist
+      path: Blocker1/Info.plist
       properties:
-        CFBundleDisplayName: Anti-démarchage
+        CFBundleDisplayName: Anti-démarchage 1
         NSExtension:
           NSExtensionPointIdentifier: com.apple.callkit.call-directory
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.erase4me.calls.blocker
+        GENERATE_INFOPLIST_FILE: NO
+
+  Blocker2:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BlockerShared
+      - path: Blocker2
+    info:
+      path: Blocker2/Info.plist
+      properties:
+        CFBundleDisplayName: Anti-démarchage 2
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.callkit.call-directory
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.erase4me.calls.blocker2
         GENERATE_INFOPLIST_FILE: NO

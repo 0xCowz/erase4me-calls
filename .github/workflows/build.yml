@@ -34,8 +34,10 @@ jobs:
       - name: Verifier le contenu de l'app
         run: |
           APP="build/Build/Products/Release-iphoneos/Erase4meCalls.app"
-          ls "$APP/PlugIns" && ls "$APP/PlugIns/Blocker.appex" | head -20
-          test -f "$APP/PlugIns/Blocker.appex/ranges.json" || { echo "ranges.json absent de l'extension"; exit 1; }
+          ls "$APP/PlugIns"
+          for n in Blocker1 Blocker2; do
+            test -f "$APP/PlugIns/$n.appex/ranges.json" || { echo "ranges.json absent de $n"; exit 1; }
+          done
           test -f "$APP/blocks.json" || { echo "blocks.json absent de l'app"; exit 1; }
           test -f "$APP/Assets.car" || { echo "catalogue d'assets absent"; exit 1; }
 

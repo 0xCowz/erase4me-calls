@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Génère les données du bloqueur à partir des données ouvertes de l'ARCEP :
 
-  BlockerExtension/ranges.json  plages E.164 fusionnées, lues par l'extension CallKit
+  Blocker1/ranges.json, Blocker2/ranges.json  plages E.164 fusionnées, une par extension CallKit (chacune reste sous la limite d iOS)
   App/blocks.json               tranches de 1 000 numéros avec leur opérateur (nom, SIRET, adresse, date d'attribution), lues par l'app
 
 Sources (data.gouv.fr, licence ouverte) : [MAJNUM] « Ressources en numérotation téléphonique » et « Identifiants de communications électroniques ».
 Les préfixes sont les plages que l'ARCEP réserve à la prospection commerciale depuis le 01/01/2023.
 
-Usage :  python tools/gen_ranges.py                 # 0377 0378 0948 0949 (03 et 09)
-         python tools/gen_ranges.py 0162 0270 ...   # autres préfixes (limite d'iOS : environ 2 millions de numéros par extension)
+Usage :  python tools/gen_ranges.py                 # les 12 plages de démarchage (seules celles attribuées ont des numéros)
+         python tools/gen_ranges.py 0377 0568 ...   # seulement certains préfixes
 """
 import datetime
 import json
@@ -19,7 +19,6 @@ import urllib.request
 NUM_RID = "90e8bdd0-0f5c-47ac-bd39-5f46463eb806"
 OPS_RID = "b0f62183-cd0c-498d-8153-aa1594e5e8d9"
 API = "https://tabular-api.data.gouv.fr/api/resources/%s/data/"
-DEFAULT = ("0377", "0378", "0948", "0949")
 ALL_DEMARCHAGE = ("0162", "0163", "0270", "0271", "0377", "0378", "0424", "0425", "0568", "0569", "0948", "0949")
 
 
@@ -52,7 +51,7 @@ def e164(national):          # "0377087295" -> 33377087295
 
 
 def main():
-    prefixes = tuple(sys.argv[1:]) or DEFAULT
+    prefixes = tuple(sys.argv[1:]) or ALL_DEMARCHAGE
     bad = [p for p in prefixes if p not in ALL_DEMARCHAGE]
     if bad:
         sys.exit(f"préfixes non réservés à la prospection, refusés : {bad}")
@@ -63,20 +62,35 @@ def main():
                  key=lambda t: t["s"])
     codes = sorted({t["c"] for t in out})
     ops = {c: operator(c) for c in codes}
-    merged = []
-    for t in out:                         # fusion des tranches contiguës ; CallKit exige un ordre croissant sans doublon
-        if merged and t["s"] <= merged[-1][1] + 1:
-            merged[-1][1] = max(merged[-1][1], t["e"])
-        else:
-            merged.append([t["s"], t["e"]])
-    total = sum(b - a + 1 for a, b in merged)
-    with open("BlockerExtension/ranges.json", "w", encoding="utf-8") as f:
-        json.dump(merged, f)
+    GROUPS = 2
+
+    def merge(items):                    # fusion des tranches contiguës ; CallKit exige un ordre croissant sans doublon
+        m = []
+        for t in items:
+            if m and t["s"] <= m[-1][1] + 1:
+                m[-1][1] = max(m[-1][1], t["e"])
+            else:
+                m.append([t["s"], t["e"]])
+        return m
+
+    total = sum(t["e"] - t["s"] + 1 for t in out)
+    groups, cur, acc = [], [], 0
+    for t in out:                        # répartition équilibrée, par tranches entières
+        cur.append(t); acc += t["e"] - t["s"] + 1
+        if acc >= total / GROUPS and len(groups) < GROUPS - 1:
+            groups.append(cur); cur, acc = [], 0
+    groups.append(cur)
+    for n, grp in enumerate(groups, 1):
+        merged = merge(grp)
+        with open(f"Blocker{n}/ranges.json", "w", encoding="utf-8") as f:
+            json.dump(merged, f)
+        size = sum(b - a + 1 for a, b in merged)
+        print(f"extension {n} : {len(merged)} plages, {size} numéros")
+        if size > 1_800_000:
+            print("ATTENTION : cette extension dépasse la capacité observée d iOS (environ 1,8 million).")
     with open("App/blocks.json", "w", encoding="utf-8") as f:
         json.dump({"generated": datetime.date.today().isoformat(), "prefixes": list(prefixes), "operators": ops, "tranches": out}, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"{len(merged)} plages, {total} numéros, {len(out)} tranches, {len(ops)} opérateurs (préfixes : {' '.join(prefixes)})")
-    if total > 2_000_000:
-        print("ATTENTION : au-delà d'environ 2 millions de numéros, iOS peut refuser le chargement de l'extension.")
+    print(f"{total} numéros au total, {len(out)} tranches, {len(ops)} opérateurs (préfixes : {' '.join(prefixes)})")
 
 
 if __name__ == "__main__":
