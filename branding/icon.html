@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>erase4me icon</title>
+<style>body{margin:0;background:#222;display:grid;place-items:center;min-height:100vh}canvas{width:512px;height:512px;border-radius:112px}</style></head>
+<body><canvas id="c" width="1024" height="1024"></canvas>
+<script>
+function draw(ctx, S, withBg) {
+  const k = S / 1024;
+  ctx.save(); ctx.scale(k, k);
+  if (withBg) { ctx.fillStyle = '#0e0e0f'; ctx.fillRect(0, 0, 1024, 1024); }
+  // feuille de papier
+  ctx.fillStyle = '#050505';
+  ctx.beginPath(); ctx.roundRect(206, 156, 612, 748, 26); ctx.fill();   // ombre dure, façon boutons du site
+  ctx.fillStyle = '#ece9e2';
+  ctx.beginPath(); ctx.roundRect(206, 138, 612, 748, 26); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  // texte « flouté » en gris
+  ctx.fillStyle = '#c9c5ba';
+  ctx.fillRect(268, 214, 232, 16);
+  ctx.fillRect(268, 268, 488, 12);
+  ctx.fillRect(268, 304, 424, 12);
+  // caviardages
+  ctx.fillStyle = '#121213';
+  ctx.fillRect(268, 392, 400, 46);
+  ctx.fillRect(268, 466, 300, 46);
+  ctx.fillRect(268, 540, 456, 46);
+  // lignes
+  ctx.fillStyle = '#c9c5ba';
+  ctx.fillRect(268, 630, 470, 12);
+  ctx.fillRect(268, 666, 360, 12);
+  // sens interdit vermillon
+  ctx.strokeStyle = '#ff6a3d'; ctx.lineWidth = 30; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(668, 742, 122, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(582, 656); ctx.lineTo(754, 828); ctx.stroke();
+  ctx.restore();
+}
+const c = document.getElementById('c'); draw(c.getContext('2d'), 1024, true);
+window.exportPNG = (size, bg) => { const o = document.createElement('canvas'); o.width = o.height = size; draw(o.getContext('2d'), size, bg); return o.toDataURL('image/png'); };
+</script></body></html>

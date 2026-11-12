@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-label="erase4me">
+  <rect width="720" height="200" fill="#0e0e0f"/>
+  <g transform="translate(40 24) scale(0.1523)">
+    <rect x="206" y="156" width="612" height="748" rx="26" fill="#050505"/>
+    <rect x="206" y="138" width="612" height="748" rx="26" fill="#ece9e2"/>
+    <g fill="#c9c5ba"><rect x="268" y="214" width="232" height="16" rx="2"/><rect x="268" y="268" width="488" height="12" rx="2"/><rect x="268" y="304" width="424" height="12" rx="2"/><rect x="268" y="630" width="470" height="12" rx="2"/><rect x="268" y="666" width="360" height="12" rx="2"/></g>
+    <g fill="#121213"><rect x="268" y="392" width="400" height="46" rx="3"/><rect x="268" y="466" width="300" height="46" rx="3"/><rect x="268" y="540" width="456" height="46" rx="3"/></g>
+    <g stroke="#ff6a3d" stroke-width="30" stroke-linecap="round" fill="none"><circle cx="668" cy="742" r="122"/><path d="M582 656 L754 828"/></g>
+  </g>
+  <text x="230" y="124" font-family="'Newsreader','Iowan Old Style','New York',Georgia,serif" font-size="92" font-weight="600" letter-spacing="-3" fill="#ece9e2">erase<tspan fill="#ff6a3d">4</tspan>me</text>
+</svg>
