@@ -1,0 +1,44 @@
+name: Erase4meCalls
+options:
+  bundleIdPrefix: com.erase4me
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Erase4meCalls:
+    type: application
+    platform: iOS
+    sources: [App]
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Anti-démarchage
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.erase4me.calls
+        GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      - target: Blocker
+        embed: true
+  Blocker:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BlockerExtension
+    info:
+      path: BlockerExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Anti-démarchage
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.callkit.call-directory
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.erase4me.calls.blocker
+        GENERATE_INFOPLIST_FILE: NO
